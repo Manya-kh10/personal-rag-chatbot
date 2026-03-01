@@ -1,0 +1,7 @@
+Manya is a student learning Generative AI.
+She is currently studying transformer architecture and PyTorch.
+She wants to build a personal RAG-based chatbot as her first project.
+Her favorite food is pizza.
+She lives in India.
+She is interested in machine learning and deep learning.
+She knows the basics of transformer arch 
