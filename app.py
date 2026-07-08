@@ -32,6 +32,11 @@ def load_llm(provider, api_key):
             return None
         from langchain_google_genai import ChatGoogleGenerativeAI
         return ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+    elif provider == "Groq (Cloud)":
+        if not api_key:
+            return None
+        from langchain_groq import ChatGroq
+        return ChatGroq(model="llama-3.1-8b-instant", groq_api_key=api_key)
     else:
         try:
             from langchain_ollama import ChatOllama
@@ -52,7 +57,7 @@ with st.sidebar:
     st.subheader("🤖 LLM Settings")
     provider = st.selectbox(
         "LLM Provider",
-        ["Google Gemini (Cloud)", "Ollama (Local)"],
+        ["Google Gemini (Cloud)", "Groq (Cloud)", "Ollama (Local)"],
         index=0
     )
     
@@ -66,6 +71,16 @@ with st.sidebar:
         else:
             api_key = env_key
             st.info("Using Google API Key from environment/secrets.")
+            
+    elif provider == "Groq (Cloud)":
+        env_key = os.environ.get("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY", None)
+        if not env_key:
+            api_key = st.text_input("Enter Groq API Key", type="password")
+            if not api_key:
+                st.warning("⚠️ Please enter a Groq API Key to use Groq.")
+        else:
+            api_key = env_key
+            st.info("Using Groq API Key from environment/secrets.")
 
     st.divider()
 
@@ -124,8 +139,8 @@ for msg in st.session_state.messages:
 llm = load_llm(provider, api_key)
 
 # Chat input
-disabled = (provider == "Google Gemini (Cloud)" and not api_key)
-placeholder = "Ask me anything..." if not disabled else "Please enter your Google API Key in the sidebar to chat."
+disabled = (provider in ["Google Gemini (Cloud)", "Groq (Cloud)"] and not api_key)
+placeholder = "Ask me anything..." if not disabled else f"Please enter your {provider.split()[0]} API Key in the sidebar to chat."
 
 if question := st.chat_input(placeholder, disabled=disabled):
     # Show user message

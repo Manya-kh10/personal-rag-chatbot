@@ -7,3 +7,4 @@ chromadb
 sentence-transformers
 pypdf
 langchain-google-genai
+langchain-groq
