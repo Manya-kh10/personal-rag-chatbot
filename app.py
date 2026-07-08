@@ -3,7 +3,6 @@ import tempfile
 import os
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain_ollama import ChatOllama
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -11,14 +10,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 st.set_page_config(page_title="My Personal RAG", page_icon="🤖")
 st.title("🤖 My Personal RAG Chatbot")
 
-# Load models (only once)
+# Load embeddings (only once)
 @st.cache_resource
-def load_models():
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
-    llm = ChatOllama(model="llama3.2")
-    return embeddings, llm
+def load_embeddings():
+    return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 
-embeddings, llm = load_models()
+embeddings = load_embeddings()
 
 # Load vectorstore
 @st.cache_resource
@@ -27,6 +24,22 @@ def load_vectorstore(_embeddings):
 
 vectorstore = load_vectorstore(embeddings)
 
+# LLM Loading
+@st.cache_resource
+def load_llm(provider, api_key):
+    if provider == "Google Gemini (Cloud)":
+        if not api_key:
+            return None
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        return ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+    else:
+        try:
+            from langchain_ollama import ChatOllama
+            return ChatOllama(model="llama3.2")
+        except ImportError:
+            st.error("Ollama package is not installed.")
+            return None
+
 # Chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -34,6 +47,27 @@ if "messages" not in st.session_state:
 # Sidebar
 with st.sidebar:
     st.header("⚙️ Settings")
+
+    # LLM Settings
+    st.subheader("🤖 LLM Settings")
+    provider = st.selectbox(
+        "LLM Provider",
+        ["Google Gemini (Cloud)", "Ollama (Local)"],
+        index=0
+    )
+    
+    api_key = None
+    if provider == "Google Gemini (Cloud)":
+        env_key = os.environ.get("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY", None)
+        if not env_key:
+            api_key = st.text_input("Enter Google API Key", type="password")
+            if not api_key:
+                st.warning("⚠️ Please enter a Google API Key to use Gemini.")
+        else:
+            api_key = env_key
+            st.info("Using Google API Key from environment/secrets.")
+
+    st.divider()
 
     # PDF Upload
     st.subheader("📄 Upload a Document")
@@ -87,8 +121,13 @@ for msg in st.session_state.messages:
                 for i, source in enumerate(msg["sources"]):
                     st.caption(f"Chunk {i+1}: {source}")
 
+llm = load_llm(provider, api_key)
+
 # Chat input
-if question := st.chat_input("Ask me anything..."):
+disabled = (provider == "Google Gemini (Cloud)" and not api_key)
+placeholder = "Ask me anything..." if not disabled else "Please enter your Google API Key in the sidebar to chat."
+
+if question := st.chat_input(placeholder, disabled=disabled):
     # Show user message
     st.session_state.messages.append({"role": "user", "content": question})
     with st.chat_message("user"):
