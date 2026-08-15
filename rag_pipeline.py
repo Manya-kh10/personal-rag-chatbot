@@ -107,3 +107,36 @@ def rerank_documents(query, documents, cross_encoder_model, k_final=3):
     
     # Return top k_final
     return [doc for doc, score in scored_docs[:k_final]]
+
+_vectorstore = None
+_embeddings = None
+
+def get_default_vectorstore():
+    global _vectorstore, _embeddings
+    if _vectorstore is None:
+        from langchain_community.embeddings import HuggingFaceEmbeddings
+        from langchain_community.vectorstores import Chroma
+        _embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        _vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=_embeddings)
+    return _vectorstore
+
+def retrieve_context(query: str) -> str:
+    """
+    Calls the existing hybrid search + cross-encoder reranking pipeline
+    and returns top 3 reranked chunks as a single formatted string with source labels.
+    """
+    vectorstore = get_default_vectorstore()
+    candidates = hybrid_retrieve(vectorstore, query, k_pool=15)
+    cross_encoder = get_cross_encoder()
+    top_docs = rerank_documents(query, candidates, cross_encoder, k_final=3)
+    
+    if not top_docs:
+        return "No relevant documents found."
+        
+    formatted_chunks = []
+    for idx, doc in enumerate(top_docs):
+        source = doc.metadata.get("source", f"Chunk {idx+1}")
+        formatted_chunks.append(f"[Source: {source}]\n{doc.page_content}")
+        
+    return "\n\n".join(formatted_chunks)
+

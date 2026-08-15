@@ -9,3 +9,4 @@ pypdf
 langchain-google-genai
 langchain-groq
 rank-bm25
+google-generativeai

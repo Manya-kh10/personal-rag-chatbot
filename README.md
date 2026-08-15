@@ -19,10 +19,12 @@ This means the LLM answers based on *your* data — not just its general trainin
 
 - 📄 Upload your own PDFs or TXT files directly from the UI
 - 🧠 Answers questions based on your uploaded documents
+- 🤖 **Agentic Tool-Use Mode**: Uses Gemini's and Groq's native function-calling APIs (`google-generativeai` & `langchain-groq`) to dynamically evaluate queries and decide whether to call the retrieval pipeline as a tool before answering
+- ⚡ **Hybrid Search & Reranking**: Combines dense vector retrieval (ChromaDB) and sparse keyword retrieval (BM25) via Reciprocal Rank Fusion (RRF), with Cross-Encoder reranking (`TinyBERT` / `MiniLM`)
 - 💬 Maintains conversation history within a session
 - 🔍 Toggle to view the source chunks used to generate each answer
 - 🗑️ Clear chat button to reset the conversation
-- 🏠 Runs completely locally — no data leaves your machine
+- 🏠 Runs locally or with cloud LLM APIs (Gemini & Groq)
 
 ---
 
@@ -30,11 +32,12 @@ This means the LLM answers based on *your* data — not just its general trainin
 
 | Tool | Purpose |
 |------|---------|
-| [Ollama](https://ollama.com) + Llama 3.2 | Local LLM inference |
-| [LangChain](https://langchain.com) | RAG pipeline |
+| [Google Gemini](https://ai.google.dev) / [Groq](https://groq.com) / [Ollama](https://ollama.com) | LLM inference & native tool calling |
+| [LangChain](https://langchain.com) | RAG pipeline & tool integration |
 | [ChromaDB](https://www.trychroma.com) | Vector database |
-| [HuggingFace sentence-transformers](https://huggingface.co/sentence-transformers) | Text embeddings (`all-MiniLM-L6-v2`) |
+| [HuggingFace sentence-transformers](https://huggingface.co/sentence-transformers) | Text embeddings (`all-MiniLM-L6-v2`) & Cross-Encoders |
 | [Streamlit](https://streamlit.io) | Frontend UI |
+
 
 ---
 
@@ -162,5 +165,6 @@ A standalone evaluation pipeline (`eval.py`) was built to compare the RAG perfor
 
 ---
 
-*Built as a first GenAI project — part of a learning journey into Generative AI and LLMs.*
+*Built as a first GenAI project — part of a learning journey into Generative AI and LLMs.*  
+*Development assisted by Hermes Agent / Cursor.*
 

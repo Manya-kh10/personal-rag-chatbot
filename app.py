@@ -8,10 +8,12 @@ from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import rag_pipeline
+import gemini_agent
 
 # Page config
 st.set_page_config(page_title="My Personal RAG", page_icon="🤖")
 st.title("🤖 My Personal RAG Chatbot")
+
 
 # Load embeddings (only once)
 @st.cache_resource
@@ -127,9 +129,9 @@ with st.sidebar:
     st.subheader("🔍 Retrieval & Ranking Settings")
     search_mode = st.selectbox(
         "Search Mode",
-        ["Pure Semantic (No Rerank)", "Hybrid + Rerank"],
+        ["Pure Semantic (No Rerank)", "Hybrid + Rerank", "Agentic (Gemini / Groq tool-use)"],
         index=0,
-        help="Compare Pure Semantic (retrieves top 3 chunks directly) vs Hybrid + Rerank (retrieves top 15 chunks using hybrid dense/sparse search with RRF, then reranks down to top 3)."
+        help="Compare Pure Semantic vs Hybrid + Rerank vs Agentic tool-use mode (where Gemini or Groq dynamically decides when to retrieve context)."
     )
 
     st.divider()
@@ -144,6 +146,8 @@ with st.sidebar:
 # Display previous messages
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
+        if msg.get("used_rag"):
+            st.info("🔎 Using RAG pipeline to retrieve context...")
         st.write(msg["content"])
         if show_sources and msg["role"] == "assistant" and "sources" in msg:
             with st.expander("📚 Source chunks used"):
@@ -162,35 +166,57 @@ if question := st.chat_input(placeholder, disabled=disabled):
     with st.chat_message("user"):
         st.write(question)
 
-    # Build conversation history
-    history = ""
-    for msg in st.session_state.messages[:-1]:
-        role = "User" if msg["role"] == "user" else "Assistant"
-        history += f"{role}: {msg['content']}\n"
+    if search_mode == "Agentic (Gemini / Groq tool-use)":
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking (Agent evaluating tool call)..."):
+                try:
+                    agent_res = gemini_agent.run_agent(question, provider=provider, api_key=api_key)
+                    answer = agent_res["answer"]
+                    used_rag = agent_res["used_rag"]
+                except Exception as e:
+                    answer = f"Error running agent: {e}"
+                    used_rag = False
 
-    # Retrieve relevant chunks based on search mode
-    if search_mode == "Pure Semantic (No Rerank)":
-        retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-        docs = retriever.invoke(question)
-    else:
-        # Hybrid + Rerank configuration
-        # Retrieve candidate pool of size 15 from dense + sparse sources
-        candidates = rag_pipeline.hybrid_retrieve(vectorstore, question, k_pool=15)
-        
-        # Load and cache CrossEncoder using st.cache_resource
-        @st.cache_resource
-        def get_cached_cross_encoder():
-            return rag_pipeline.get_cross_encoder()
             
-        cross_encoder = get_cached_cross_encoder()
-        # Rerank down to top 3 (apples-to-apples comparison depth)
-        docs = rag_pipeline.rerank_documents(question, candidates, cross_encoder, k_final=3)
+            if used_rag:
+                st.info("🔎 Using RAG pipeline to retrieve context...")
+            st.write(answer)
 
-    context = "\n\n".join([doc.page_content for doc in docs])
-    source_chunks = [doc.page_content for doc in docs]
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": answer,
+            "used_rag": used_rag
+        })
+    else:
+        # Build conversation history
+        history = ""
+        for msg in st.session_state.messages[:-1]:
+            role = "User" if msg["role"] == "user" else "Assistant"
+            history += f"{role}: {msg['content']}\n"
 
-    # Build prompt
-    prompt = f"""You are a helpful personal assistant. Use the context and conversation history below to answer the question.
+        # Retrieve relevant chunks based on search mode
+        if search_mode == "Pure Semantic (No Rerank)":
+            retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+            docs = retriever.invoke(question)
+        else:
+            # Hybrid + Rerank configuration
+            # Retrieve candidate pool of size 15 from dense + sparse sources
+            candidates = rag_pipeline.hybrid_retrieve(vectorstore, question, k_pool=15)
+            
+            # Load and cache CrossEncoder using st.cache_resource
+            @st.cache_resource
+            def get_cached_cross_encoder():
+                return rag_pipeline.get_cross_encoder()
+                
+            cross_encoder = get_cached_cross_encoder()
+            # Rerank down to top 3 (apples-to-apples comparison depth)
+            docs = rag_pipeline.rerank_documents(question, candidates, cross_encoder, k_final=3)
+
+        context = "\n\n".join([doc.page_content for doc in docs])
+        source_chunks = [doc.page_content for doc in docs]
+
+        # Build prompt
+        prompt = f"""You are a helpful personal assistant. Use the context and conversation history below to answer the question.
 If the answer isn't in the context, say you don't know.
 
 Context from documents:
@@ -201,20 +227,20 @@ Conversation history:
 User: {question}
 Answer:"""
 
-    with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            response = llm.invoke(prompt)
-            answer = response.content
-        st.write(answer)
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                response = llm.invoke(prompt)
+                answer = response.content
+            st.write(answer)
 
-        # Show sources if toggle is on
-        if show_sources:
-            with st.expander("📚 Source chunks used"):
-                for i, chunk in enumerate(source_chunks):
-                    st.caption(f"Chunk {i+1}: {chunk}")
+            # Show sources if toggle is on
+            if show_sources:
+                with st.expander("📚 Source chunks used"):
+                    for i, chunk in enumerate(source_chunks):
+                        st.caption(f"Chunk {i+1}: {chunk}")
 
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": answer,
-        "sources": source_chunks
-    })
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": answer,
+            "sources": source_chunks
+        })
