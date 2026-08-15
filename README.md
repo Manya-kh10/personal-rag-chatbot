@@ -121,6 +121,38 @@ personal-rag-chatbot/
 
 ---
 
+## 📊 Evaluation & Benchmarks
+
+A standalone evaluation pipeline (`eval.py`) was built to compare the RAG performance across different search and reranking configurations.
+
+### Configuration Details
+- **Evaluation Depth (k_final)**: `3` (across all three configurations to ensure an apples-to-apples comparison).
+- **Candidate Pool Size (k_pool)**: `15` (for hybrid retrieval configurations).
+- **Sparse Index**: BM25 keyword search.
+- **Reranker Models**:
+  - `cross-encoder/ms-marco-TinyBERT-L-2-v2` (17MB lightweight local Cross-Encoder).
+  - `cross-encoder/ms-marco-MiniLM-L-6-v2` (80MB moderate local Cross-Encoder).
+- **Grading Model**: Local-model-graded (using the configured LLM).
+
+### Performance Metrics
+
+| Metric | Pure Semantic (Baseline) | Hybrid + TinyBERT (17MB) | Hybrid + MiniLM (80MB) |
+| :--- | :---: | :---: | :---: |
+| **Recall@3** (Retrieval Quality) | 1.000 | 1.000 | 1.000 |
+| **MRR@3** (Retrieval Ranking) | 0.865 | 0.962 | 0.942 |
+| **Faithfulness** (Local-model-graded) | 0.874 | 0.919 | 0.940 |
+| **Answer Relevancy** (Local-model-graded) | 0.690 | 0.707 | 0.698 |
+
+### 📌 Reranker Tradeoffs Takeaway
+- **Pure Semantic (Baseline)**: No extra dependencies, lowest latency, but suffers from lower ranking precision (MRR: `0.865`), leading to less faithful LLM generations due to noise in the retrieved chunks.
+- **Hybrid + TinyBERT (17MB)**: Extremely fast and lightweight. Very low memory footprint, making it ideal for CPU-only or resource-constrained local environments. Significantly improves ranking precision (MRR: `0.962`) and raises Faithfulness to `0.919`.
+- **Hybrid + MiniLM (80MB)**: Moderate download size. Captures finer semantic nuances than TinyBERT, achieving the highest overall **Faithfulness** (`0.940`) by ensuring context chunks align closely with target factual query details, with only a minor ranking precision variation on this dataset size (MRR: `0.942`).
+
+> [!WARNING]
+> **Self-Grading Bias Warning**: Faithfulness and Answer Relevancy are graded by the local model itself. These scores are **local-model-graded, not GPT-4-graded**, which may introduce a self-grading bias resulting in more generous or slightly inconsistent scoring. They serve as a relative comparison rather than an objective benchmark.
+
+---
+
 ## 📌 Future Improvements
 
 - [ ] Swap Ollama for a cloud LLM API for deployment
@@ -131,3 +163,4 @@ personal-rag-chatbot/
 ---
 
 *Built as a first GenAI project — part of a learning journey into Generative AI and LLMs.*
+

@@ -1,0 +1,132 @@
+[
+  {
+    "question": "Who is Manya?",
+    "ground_truth": "Manya is a student learning Generative AI.",
+    "expected_substrings": ["student", "Generative AI", "Manya"]
+  },
+  {
+    "question": "What is Manya learning?",
+    "ground_truth": "Manya is learning Generative AI, transformer architecture, and PyTorch.",
+    "expected_substrings": ["Generative AI", "transformer", "PyTorch"]
+  },
+  {
+    "question": "What subjects is she currently studying?",
+    "ground_truth": "She is studying transformer architecture and PyTorch.",
+    "expected_substrings": ["transformer", "architecture", "PyTorch"]
+  },
+  {
+    "question": "What framework is she studying for deep learning?",
+    "ground_truth": "She is studying PyTorch.",
+    "expected_substrings": ["PyTorch"]
+  },
+  {
+    "question": "What does she want to build as her first project?",
+    "ground_truth": "She wants to build a personal RAG-based chatbot.",
+    "expected_substrings": ["personal RAG", "chatbot"]
+  },
+  {
+    "question": "What kind of chatbot is she building?",
+    "ground_truth": "She wants to build a personal RAG-based chatbot as her first project.",
+    "expected_substrings": ["RAG-based", "chatbot"]
+  },
+  {
+    "question": "What is her favorite food?",
+    "ground_truth": "Her favorite food is pizza.",
+    "expected_substrings": ["favorite food", "pizza"]
+  },
+  {
+    "question": "Does she like pizza?",
+    "ground_truth": "Yes, her favorite food is pizza.",
+    "expected_substrings": ["pizza"]
+  },
+  {
+    "question": "Where does she live?",
+    "ground_truth": "She lives in India.",
+    "expected_substrings": ["lives in India"]
+  },
+  {
+    "question": "Which country is Manya from?",
+    "ground_truth": "Manya lives in India.",
+    "expected_substrings": ["India"]
+  },
+  {
+    "question": "What are her interests?",
+    "ground_truth": "She is interested in machine learning and deep learning.",
+    "expected_substrings": ["machine learning", "deep learning"]
+  },
+  {
+    "question": "Is she interested in machine learning?",
+    "ground_truth": "Yes, she is interested in machine learning and deep learning.",
+    "expected_substrings": ["machine learning"]
+  },
+  {
+    "question": "Is she interested in deep learning?",
+    "ground_truth": "Yes, she is interested in machine learning and deep learning.",
+    "expected_substrings": ["deep learning"]
+  },
+  {
+    "question": "What are the basics she knows?",
+    "ground_truth": "She knows the basics of transformer architecture.",
+    "expected_substrings": ["basics", "transformer"]
+  },
+  {
+    "question": "Does she know transformer architecture?",
+    "ground_truth": "She knows the basics of transformer architecture.",
+    "expected_substrings": ["basics", "transformer"]
+  },
+  {
+    "question": "Is Manya studying PyTorch?",
+    "ground_truth": "Yes, she is studying transformer architecture and PyTorch.",
+    "expected_substrings": ["PyTorch"]
+  },
+  {
+    "question": "What is she building for her first GenAI project?",
+    "ground_truth": "She wants to build a personal RAG-based chatbot as her first project.",
+    "expected_substrings": ["RAG-based", "chatbot", "project"]
+  },
+  {
+    "question": "What does she want to do with Generative AI?",
+    "ground_truth": "She wants to learn it and build a personal RAG-based chatbot as her first project.",
+    "expected_substrings": ["RAG-based", "chatbot"]
+  },
+  {
+    "question": "What is Manya's preferred meal?",
+    "ground_truth": "Her favorite food is pizza.",
+    "expected_substrings": ["pizza"]
+  },
+  {
+    "question": "Where does she reside?",
+    "ground_truth": "She lives in India.",
+    "expected_substrings": ["lives in India"]
+  },
+  {
+    "question": "What deep learning framework is she studying?",
+    "ground_truth": "She is studying PyTorch.",
+    "expected_substrings": ["PyTorch"]
+  },
+  {
+    "question": "What is her current study focus?",
+    "ground_truth": "She is studying transformer architecture and PyTorch.",
+    "expected_substrings": ["transformer", "PyTorch"]
+  },
+  {
+    "question": "What is the focus of her first project?",
+    "ground_truth": "Her first project focus is a personal RAG-based chatbot.",
+    "expected_substrings": ["RAG-based", "chatbot"]
+  },
+  {
+    "question": "Is she interested in AI?",
+    "ground_truth": "Yes, she is a student learning Generative AI and interested in machine learning and deep learning.",
+    "expected_substrings": ["Generative AI", "machine learning", "deep learning"]
+  },
+  {
+    "question": "Does she know anything about transformers?",
+    "ground_truth": "She knows the basics of transformer architecture.",
+    "expected_substrings": ["basics", "transformer"]
+  },
+  {
+    "question": "What student is studying PyTorch in India?",
+    "ground_truth": "Manya is a student studying PyTorch who lives in India.",
+    "expected_substrings": ["Manya", "student", "PyTorch", "India"]
+  }
+]

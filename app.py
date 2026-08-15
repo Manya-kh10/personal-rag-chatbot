@@ -1,10 +1,13 @@
+import os
+os.environ["HF_HOME"] = "E:\\hf_cache"
+os.environ["SENTENCE_TRANSFORMERS_HOME"] = "E:\\hf_cache"
 import streamlit as st
 import tempfile
-import os
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+import rag_pipeline
 
 # Page config
 st.set_page_config(page_title="My Personal RAG", page_icon="🤖")
@@ -120,6 +123,17 @@ with st.sidebar:
 
     st.divider()
 
+    # Search Mode settings
+    st.subheader("🔍 Retrieval & Ranking Settings")
+    search_mode = st.selectbox(
+        "Search Mode",
+        ["Pure Semantic (No Rerank)", "Hybrid + Rerank"],
+        index=0,
+        help="Compare Pure Semantic (retrieves top 3 chunks directly) vs Hybrid + Rerank (retrieves top 15 chunks using hybrid dense/sparse search with RRF, then reranks down to top 3)."
+    )
+
+    st.divider()
+
     # Clear chat
     if st.button("🗑️ Clear Chat"):
         st.session_state.messages = []
@@ -154,9 +168,24 @@ if question := st.chat_input(placeholder, disabled=disabled):
         role = "User" if msg["role"] == "user" else "Assistant"
         history += f"{role}: {msg['content']}\n"
 
-    # Retrieve relevant chunks
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-    docs = retriever.invoke(question)
+    # Retrieve relevant chunks based on search mode
+    if search_mode == "Pure Semantic (No Rerank)":
+        retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+        docs = retriever.invoke(question)
+    else:
+        # Hybrid + Rerank configuration
+        # Retrieve candidate pool of size 15 from dense + sparse sources
+        candidates = rag_pipeline.hybrid_retrieve(vectorstore, question, k_pool=15)
+        
+        # Load and cache CrossEncoder using st.cache_resource
+        @st.cache_resource
+        def get_cached_cross_encoder():
+            return rag_pipeline.get_cross_encoder()
+            
+        cross_encoder = get_cached_cross_encoder()
+        # Rerank down to top 3 (apples-to-apples comparison depth)
+        docs = rag_pipeline.rerank_documents(question, candidates, cross_encoder, k_final=3)
+
     context = "\n\n".join([doc.page_content for doc in docs])
     source_chunks = [doc.page_content for doc in docs]
 

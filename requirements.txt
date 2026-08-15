@@ -8,3 +8,4 @@ sentence-transformers
 pypdf
 langchain-google-genai
 langchain-groq
+rank-bm25
