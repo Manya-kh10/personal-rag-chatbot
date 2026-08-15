@@ -109,8 +109,9 @@ with st.sidebar:
                     loader = TextLoader(tmp_path, encoding="utf-8")
 
                 docs = loader.load()
-                splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=50)
-                chunks = splitter.split_documents(docs)
+                from ingest import split_documents_preserving_tables
+                chunks = split_documents_preserving_tables(docs, chunk_size=200, chunk_overlap=50)
+
 
                 # Add to existing vectorstore
                 vectorstore.add_documents(chunks)
